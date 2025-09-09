@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!--makes website responsive-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>PokeBase</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!--Grid stuff-->
+    <!--default value of 3x3 with a min value of 1-->
+    <label>Rows: <input type="number" id="rows" min="1" value="3"></label>
+    <label>Columns: <input type="number" id="columns" min="1" value="3"></label>
+    <button onclick="generateGrid()">Generate Binder</button>
+
+    <br/><br/>
+    <!--for future, it will save progress as a csv file called binder.csv-->
+    <label>Save binder as soso: <input type="file" id ="saveFile"></label>
+    <br/>
+    <!--will load in your .csv file with data-->
+    <label>Load binder: <input type="file" id ="loadFile"></label>
+
+    <div id="grid" class="grid-container"></div>
+    <button id="backPage">Back Page</button>
+    
+    <body onload="printPage()">
+        <h1>"Page: " <span id="pageNumber">0</span>
+        </h1>
+    </body>
+
+    <button id="nextPage">Next Page</button>
+    <label>Search: <input type="search" id ="search"></label>
+    <button onclick="loadCsv()">Search</button>
+    
+    
+    <!--Database stuff-->
+    
+
+
+
+
+
+
+    <!--this is the javascript stuff-->
+    <script>
+        
+        let page = 0;
+        const file = ''
+        document.getElementById("loadFile").addEventListener("change", function(event){
+            const file = event.target.files[0];
+
+            //if file isnt selected do nothing
+            if(!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e){
+                const text = e.target.result
+                processCSV(text);
+            };
+            reader.readAsText(file);
+
+        });
+
+        
+        function processCSV(csvText) {
+            const csvData = csvText.trim().split("\n").map(row => row.split(","));
+            
+            generateGrid(csvData); 
+        }
+        
+
+        function generateGrid(csvData = []) {
+            
+            const gridContainer = document.getElementById("grid");
+            const rows = parseInt(document.getElementById("rows").value);
+            const columns = parseInt(document.getElementById("columns").value);
+
+            
+            
+            const arrowPointer = page * (rows * columns);
+
+            
+            //clears previous grid
+            gridContainer.innerHTML = "";
+
+            gridContainer.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+            gridContainer.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+            
+            for (let i = 0; i < rows * columns; i++) {
+                const cell = document.createElement("div");
+                cell.className = "grid-item";
+
+                //depending on pokedex customize image
+                //cell.textContent = csvData[i][1];
+
+                const img = document.createElement("img");
+
+                //arrowPointer adds rows*columns * page number to go to correct page
+                const imageNumber =  i + 1 + arrowPointer;
+                img.src = `images/image${imageNumber}.png`;
+        
+              
+                // Optionally, set image size or styling
+                img.style.width = "200%";  // Make the image fill the grid item
+        
+                // Append the image to the grid cell
+                cell.appendChild(img);
+                gridContainer.appendChild(cell);
+
+                
+            }
+            
+            
+        }
+
+        function loadCsv(){
+            try{
+                
+                const rows = parseInt(document.getElementById("rows").value);
+                const columns = parseInt(document.getElementById("columns").value);
+                const searchValue = document.getElementById("search").value.trim().toLowerCase();
+                
+                //Problem line is underneath
+                const filePath = path.join(__dirname, 'pokemon.csv');
+                
+                const data = fs.readFileSync(filePath, 'utf8');
+                page =  3;
+                printPage();
+                generateGrid();
+
+                const csvArray = data.split('\n').map(line => line.split(','));
+                const names = csvArray.map(row => row[1]?.trim().toLowerCase());
+                found = -1;
+                for(let i = 0; i < names.length; i++){
+      
+                    if (names[i].trim() == searchValue ){
+        
+        
+                        console.log(names[i].trim() + " was found" );
+                        found = csvArray[i][0];
+                        i = names.length;
+                    }
+                }
+                page = (found % (rows * columns)) + 1
+                
+                printPage();
+                generateGrid();
+                //console.log(csvArray[328]);
+                console.log(searchValue + " is pokemon #" + found);
+            } catch(error){
+                console.error("error loading csv: ", error);
+            }
+
+        }  
+
+        function printPage(){
+            var pageNumber = String(page);
+            document.getElementById("pageNumber").innerHTML = page;
+        }
+
+        
+
+        document.getElementById("backPage").addEventListener("click", function(){
+            if (page != 0){
+                page--;
+            }
+            
+            generateGrid();
+        });
+
+        document.getElementById("nextPage").addEventListener("click", function(){
+            page++;
+            generateGrid();
+        });
+        
+        generateGrid() // Generate initial grid
+       
+       
+    </script>
+</body>
+</html>
